@@ -1,0 +1,9 @@
+Registration ID,First Name,Last Name,Email,Phone,LIEU D'ARRIVEE,COMPAGNIE,HEBERGEMENT,Référent,STATUT,Homme / Femme / Enfant,Role,JOUR D'ARRIVEE,HEURE D'ARRIVEE,JOUR DE DEPART,HEURE DE DEPART
+REG001,Jean,Dupont,jean.dupont@example.com,+33612345678,Paris CDG Terminal 2,Air France AF1234,Hôtel Central - Chambre 101,Marie Martin,PRIS EN CHARGE PAR LA COMMISSION,Homme,Pastor,27/11/2025,14:30,30/11/2025,18:00
+REG002,Sophie,Bernard,sophie.b@example.com,+33698765432,Paris Orly Sud,Brussels Airlines SN123,Hilton Downtown - Suite 205,Pierre Dubois,PRIS EN CHARGE PAR LA COMMISSION,Femme,Leader,27/11/2025,16:45,01/12/2025,10:15
+REG003,Lucas,Martin,,+33687654321,Lyon Saint-Exupéry,Ethiopian Airlines ET456,Marriott Lyon - Chambre 302,Jean Leroy,ENFANT - PRIS EN CHARGE PAR LA COMMISSION,Enfant,,28/11/2025,09:15,29/11/2025,20:30
+REG004,Marie,Dubois,marie.dubois@example.com,,Marseille Provence,Turkish Airlines TK789,InterContinental - Chambre 408,Sophie Laurent,EN ATTENTE,Femme,,28/11/2025,11:00,02/12/2025,14:00
+REG005,Paul,Simon,paul.simon@example.com,+33676543210,Nice Côte d'Azur,Kenya Airways KQ321,Radisson Blu - Suite 501,Marie Martin,PRIS EN CHARGE PAR LA COMMISSION,Homme,,29/11/2025,13:20,03/12/2025,16:45
+REG006,Emma,Laurent,emma.l@example.com,+33665432109,Bordeaux Mérignac,Royal Air Maroc AT654,Hôtel Plaza - Chambre 203,Pierre Dubois,ANNULÉ,Femme,Pastor,29/11/2025,15:50,,
+REG007,Antoine,Leroy,antoine@example.com,+33654321098,Toulouse Blagnac,Air France AF987,Hôtel Meridien - Suite 605,Jean Leroy,PRIS EN CHARGE PAR LA COMMISSION,Homme,Leader,30/11/2025,08:30,04/12/2025,12:00
+REG008,Isabelle,Garnier,,+33643210987,Strasbourg Entzheim,Brussels Airlines SN246,Marriott Strasbourg - Chambre 102,Sophie Laurent,ENFANT - PRIS EN CHARGE PAR LA COMMISSION,Enfant,,30/11/2025,10:45,05/12/2025,09:30
