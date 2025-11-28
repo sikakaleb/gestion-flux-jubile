@@ -1,0 +1,11 @@
+first_name,last_name,flight_date,flight_time,airline,accommodation,direction
+Jean,Dupont,2025-11-26,14:30,Air France,Hotel Meridien,arrival
+Marie,Martin,2025-11-26,16:45,Brussels Airlines,Hilton Downtown,arrival
+Pierre,Bernard,2025-11-26,09:15,Ethiopian Airlines,Marriott,arrival
+Sophie,Dubois,2025-11-27,11:00,Turkish Airlines,InterContinental,arrival
+Luc,Moreau,2025-11-27,13:20,Kenya Airways,Hotel Plaza,arrival
+Emma,Laurent,2025-11-27,15:50,Royal Air Maroc,Radisson Blu,departure
+Paul,Simon,2025-11-28,08:30,Air France,Hotel Meridien,departure
+Claire,Michel,2025-11-28,10:45,Brussels Airlines,Hilton Downtown,departure
+Antoine,Leroy,2025-11-28,12:15,Ethiopian Airlines,Marriott,departure
+Isabelle,Garnier,2025-11-29,14:00,Turkish Airlines,InterContinental,arrival
