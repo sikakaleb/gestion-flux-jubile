@@ -1,6 +1,7 @@
 "use client";
 
-import { Plane, Bed, AlertCircle, MapPin } from 'lucide-react';
+import { Plane, Bed, AlertCircle, MapPin, Bus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Passenger, PassengerStatus, STATUS_LABELS } from '@/lib/supabaseClient';
 import { clsx } from 'clsx';
 import { normalizeLocation } from '@/utils/csvParser';
@@ -37,6 +38,7 @@ export function PassengerCard({ passenger, onStatusChange, onClick }: PassengerC
 
   const isUrgent = passenger.is_urgent && passenger.status === 'pending';
   const styles = STATUS_STYLES[passenger.status];
+  const isShuttle = passenger.tags?.includes('SHUTTLE');
 
   return (
     <div
@@ -75,8 +77,17 @@ export function PassengerCard({ passenger, onStatusChange, onClick }: PassengerC
         {passenger.location && (
           <div className="px-4 py-2">
             <div className="flex items-center gap-2 text-base font-semibold text-sky-600 dark:text-sky-400">
-              <MapPin className="w-4 h-4 flex-shrink-0" />
+              {isShuttle ? (
+                <Bus className="w-4 h-4 flex-shrink-0 text-amber-500" />
+              ) : (
+                <MapPin className="w-4 h-4 flex-shrink-0" />
+              )}
               <span className="whitespace-normal break-words">{normalizeLocation(passenger.location)}</span>
+              {isShuttle && (
+                <Badge className="bg-amber-500 hover:bg-amber-600 text-white text-xs px-1.5 py-0">
+                  MVAN
+                </Badge>
+              )}
             </div>
           </div>
         )}
@@ -125,8 +136,17 @@ export function PassengerCard({ passenger, onStatusChange, onClick }: PassengerC
           </div>
           {passenger.location && (
             <div className="flex items-center gap-2 text-sm text-sky-600 dark:text-sky-400 mb-2">
-              <MapPin className="w-4 h-4 flex-shrink-0" />
+              {isShuttle ? (
+                <Bus className="w-4 h-4 flex-shrink-0 text-amber-500" />
+              ) : (
+                <MapPin className="w-4 h-4 flex-shrink-0" />
+              )}
               <span className="truncate font-semibold">{normalizeLocation(passenger.location)}</span>
+              {isShuttle && (
+                <Badge className="bg-amber-500 hover:bg-amber-600 text-white text-xs px-1.5 py-0">
+                  MVAN
+                </Badge>
+              )}
             </div>
           )}
           <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">

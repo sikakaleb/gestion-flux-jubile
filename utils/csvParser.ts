@@ -6,6 +6,7 @@ export interface CSVRow {
   'Registration ID': string;
   'First Name': string;
   'Last Name': string;
+  'Full Name': string;
   'Email': string;
   'Phone': string;
   'Participation Mode': string;
@@ -44,6 +45,46 @@ export interface ParseResult {
   passengers: ParsedPassenger[];
   errors: string[];
   skipped: number;
+  rescued: number;
+}
+
+/**
+ * DJB2 hash function - generates a short hash from a string
+ * Returns a hex string prefixed with AUTO-
+ */
+function generateFallbackId(input: string): string {
+  let hash = 5381;
+  for (let i = 0; i < input.length; i++) {
+    hash = ((hash << 5) + hash) ^ input.charCodeAt(i);
+  }
+  // Convert to unsigned 32-bit and then to hex
+  const hexHash = (hash >>> 0).toString(16).substring(0, 8);
+  return `AUTO-${hexHash}`;
+}
+
+/**
+ * Check if a Registration ID is invalid and needs fallback
+ */
+function needsFallbackId(registrationId: string): boolean {
+  if (!registrationId || registrationId.trim() === '') return true;
+  if (registrationId.toLowerCase().includes('non inscrit')) return true;
+  return false;
+}
+
+/**
+ * Split a full name into first name and last name
+ */
+function splitFullName(fullName: string): { firstName: string; lastName: string } {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 0 || (parts.length === 1 && parts[0] === '')) {
+    return { firstName: '', lastName: '' };
+  }
+  if (parts.length === 1) {
+    return { firstName: parts[0], lastName: '.' };
+  }
+  const firstName = parts[0];
+  const lastName = parts.slice(1).join(' ') || '.';
+  return { firstName, lastName };
 }
 
 /**
@@ -103,6 +144,14 @@ function parseTime(timeStr: string): string {
   }
 
   return '00:00';
+}
+
+/**
+ * Check if the raw location indicates a shuttle/van transfer (Mvan location)
+ */
+export function requiresShuttle(rawLocation: string): boolean {
+  if (!rawLocation) return false;
+  return rawLocation.toLowerCase().includes('mvan');
 }
 
 /**
@@ -173,6 +222,7 @@ export function parsePassengerCSV(csvContent: string): Promise<ParseResult> {
     const passengers: ParsedPassenger[] = [];
     const errors: string[] = [];
     let skipped = 0;
+    let rescued = 0;
     const statutSamples: Set<string> = new Set();
     const availableColumns: string[] = [];
 
@@ -234,19 +284,46 @@ export function parsePassengerCSV(csvContent: string): Promise<ParseResult> {
               return;
             }
 
-            // Validate required fields
-            const externalId = (row['Registration ID'] || '').trim();
-            const firstName = (row['First Name'] || '').trim();
-            const lastName = (row['Last Name'] || '').trim();
+            // === FALLBACK LOGIC FOR REGISTRATION ID ===
+            let externalId = (row['Registration ID'] || '').trim();
+            const fullName = (row['Full Name'] || '').trim();
+            const email = (row['Email'] || '').trim();
+            let wasRescued = false;
 
+            if (needsFallbackId(externalId)) {
+              // Generate fallback ID from Full Name + Email for uniqueness
+              const hashSource = fullName + (email || '');
+              if (hashSource.trim()) {
+                externalId = generateFallbackId(hashSource);
+                wasRescued = true;
+              }
+            }
+
+            // === FALLBACK LOGIC FOR NAMES ===
+            let firstName = (row['First Name'] || '').trim();
+            let lastName = (row['Last Name'] || '').trim();
+
+            if ((!firstName || !lastName) && fullName) {
+              const split = splitFullName(fullName);
+              if (!firstName) firstName = split.firstName;
+              if (!lastName) lastName = split.lastName;
+              if (firstName || lastName) wasRescued = true;
+            }
+
+            // Track rescued rows
+            if (wasRescued) {
+              rescued++;
+            }
+
+            // Validate required fields (after fallback attempts)
             if (!externalId || !firstName || !lastName) {
-              errors.push(`Row ${index + 2}: Missing required fields (Registration ID, First Name, or Last Name)`);
+              errors.push(`Row ${index + 2}: Missing required fields (Registration ID, First Name, or Last Name) - could not rescue`);
               skipped++;
               return;
             }
 
             // Extract common fields
-            const email = (row['Email'] || '').trim() || undefined;
+            const emailValue = email || undefined;
             const phone = (row['Phone'] || '').trim() || undefined;
             const rawLocation = (row['LIEU D\'ARRIVEE'] || '').trim();
             const location = normalizeLocation(rawLocation);
@@ -254,6 +331,11 @@ export function parsePassengerCSV(csvContent: string): Promise<ParseResult> {
             const accommodation = (row['HEBERGEMENT'] || '').trim() || 'Non assigné';
             const host_info = (row['Référent'] || '').trim() || undefined;
             const tags = generateTags(row);
+
+            // Check if passenger requires shuttle (raw location contains "mvan")
+            if (requiresShuttle(rawLocation)) {
+              tags.push('SHUTTLE');
+            }
 
             // ARRIVAL: Process if JOUR D'ARRIVEE exists
             const arrivalDate = parseDate(row['JOUR D\'ARRIVEE'] || '');
@@ -264,7 +346,7 @@ export function parsePassengerCSV(csvContent: string): Promise<ParseResult> {
                 external_id: externalId,
                 first_name: firstName,
                 last_name: lastName,
-                email,
+                email: emailValue,
                 phone,
                 location,
                 airline,
@@ -287,7 +369,7 @@ export function parsePassengerCSV(csvContent: string): Promise<ParseResult> {
                 external_id: externalId,
                 first_name: firstName,
                 last_name: lastName,
-                email,
+                email: emailValue,
                 phone,
                 location,
                 airline,
@@ -383,11 +465,18 @@ export function parsePassengerCSV(csvContent: string): Promise<ParseResult> {
           }
         }
 
+        // Log rescued count if any
+        if (rescued > 0) {
+          console.log(`🔧 CSV Parser: ${rescued} row(s) rescued using fallback logic`);
+          errors.unshift(`ℹ️ ${rescued} ligne(s) récupérée(s) grâce à la logique de secours (ID auto-généré ou nom divisé)`);
+        }
+
         resolve({
-          success: errors.length === 0,
+          success: errors.filter(e => !e.startsWith('ℹ️')).length === 0,
           passengers,
           errors,
           skipped,
+          rescued,
         });
       },
       error: (error: Error) => {
@@ -396,6 +485,7 @@ export function parsePassengerCSV(csvContent: string): Promise<ParseResult> {
           passengers: [],
           errors: [`CSV parsing failed: ${error.message}`],
           skipped: 0,
+          rescued: 0,
         });
       },
     });

@@ -2,7 +2,7 @@
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Passenger, PassengerStatus, STATUS_LABELS } from '@/lib/supabaseClient';
-import { Plane, Bed, User, Calendar, Clock, ArrowRight, ArrowLeft, AlertCircle, Tag, MapPin } from 'lucide-react';
+import { Plane, Bed, User, Calendar, Clock, ArrowRight, ArrowLeft, AlertCircle, Tag, MapPin, Bus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { clsx } from 'clsx';
@@ -32,10 +32,11 @@ export function PassengerDetailsSheet({ passenger, isOpen, onClose, onStatusChan
   };
 
   const styles = STATUS_STYLES[passenger.status];
+  const isShuttle = passenger.tags?.includes('SHUTTLE');
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
+      <SheetContent side="bottom" className="h-[85vh] max-h-[85vh] rounded-t-3xl overflow-y-auto">
         <SheetHeader className="mb-6">
           <SheetTitle className="text-2xl font-bold text-slate-900 dark:text-white">
             {passenger.first_name} {passenger.last_name}
@@ -48,7 +49,7 @@ export function PassengerDetailsSheet({ passenger, isOpen, onClose, onStatusChan
           )}
         </SheetHeader>
 
-        <div className="space-y-6 pb-6">
+        <div className="space-y-6 pb-32">
           <div className={clsx('p-4 rounded-xl', styles.bg)}>
             <div className="flex items-center justify-between">
               <span className={clsx('font-semibold', styles.text)}>Statut</span>
@@ -87,10 +88,21 @@ export function PassengerDetailsSheet({ passenger, isOpen, onClose, onStatusChan
               </div>
               {passenger.location && (
                 <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-sky-500 mt-0.5" />
+                  {isShuttle ? (
+                    <Bus className="w-5 h-5 text-amber-500 mt-0.5" />
+                  ) : (
+                    <MapPin className="w-5 h-5 text-sky-500 mt-0.5" />
+                  )}
                   <div>
                     <p className="text-sm text-slate-500 dark:text-slate-400">Lieu d'arrivée</p>
-                    <p className="font-semibold text-sky-700 dark:text-sky-300">{passenger.location}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-sky-700 dark:text-sky-300">{passenger.location}</p>
+                      {isShuttle && (
+                        <Badge className="bg-amber-500 hover:bg-amber-600 text-white text-xs">
+                          MVAN
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

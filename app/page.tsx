@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
-import { Search, Settings, Filter, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Settings, Filter, AlertCircle, ChevronDown, ChevronUp, Globe, X, MapPin } from 'lucide-react';
 import { supabase, Passenger, PassengerStatus, PassengerDirection } from '@/lib/supabaseClient';
 import { PassengerCard } from '@/components/PassengerCard';
 import { PassengerDetailsSheet } from '@/components/PassengerDetailsSheet';
@@ -15,6 +15,7 @@ import { BrandLogo } from '@/components/BrandLogo';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { FilterDrawer, FilterState } from '@/components/FilterDrawer';
 import { DateJumpButton } from '@/components/DateJumpButton';
+import { LocationSelector, getPreferredLocation } from '@/components/LocationSelector';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { clsx } from 'clsx';
@@ -47,6 +48,29 @@ export default function Home() {
     timeOfDay: [],
     locations: [],
   });
+  const [locationSelectorOpen, setLocationSelectorOpen] = useState(false);
+
+  // Check localStorage for preferred location on mount
+  useEffect(() => {
+    const savedLocation = getPreferredLocation();
+    if (savedLocation) {
+      if (savedLocation === 'ALL') {
+        // User chose to see all locations
+        setFilters(prev => ({ ...prev, locations: [] }));
+      } else {
+        setFilters(prev => ({ ...prev, locations: [savedLocation] }));
+      }
+    } else {
+      // No saved location, show the selector modal
+      setLocationSelectorOpen(true);
+    }
+  }, []);
+
+  // Clear location filter
+  const clearLocationFilter = () => {
+    localStorage.setItem('preferred_location', 'ALL');
+    setFilters(prev => ({ ...prev, locations: [] }));
+  };
 
   useEffect(() => {
     fetchPassengers();
@@ -244,6 +268,17 @@ export default function Home() {
           <div className="flex items-center justify-between px-4 py-4">
             <BrandLogo size="compact" />
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setLocationSelectorOpen(true)}
+                className="glass-card p-2.5 active:bg-slate-300 dark:active:bg-slate-600 rounded-lg transition-all duration-150 min-h-[44px] flex items-center gap-2"
+                aria-label="Change Zone"
+                title="Changer de zone"
+              >
+                <Globe className="w-5 h-5 text-blue-500" />
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-300 hidden sm:inline">
+                  {filters.locations[0]?.match(/\(([^)]+)\)/)?.[1] || 'Zone'}
+                </span>
+              </button>
               <ThemeToggle />
               <DateJumpButton
                 selectedDate={selectedDate}
@@ -306,6 +341,35 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* Active Location Filter Banner */}
+        {filters.locations.length > 0 && (() => {
+          const count = filters.locations.length;
+          const locationLabel = count === 1 
+            ? filters.locations[0] 
+            : count === 2 
+              ? filters.locations.join(' + ') 
+              : `${count} zones sélectionnées`;
+          const zoneSingularPlural = count === 1 ? 'Zone active' : 'Zones actives';
+          
+          return (
+            <div className="mx-4 mt-2 bg-blue-600 dark:bg-blue-700 rounded-lg px-3 py-2.5 flex items-center justify-between gap-2 shadow-lg">
+              <div className="flex items-center gap-2 text-white min-w-0 flex-1">
+                <MapPin className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm font-medium truncate">
+                  {zoneSingularPlural} : <span className="font-bold">{locationLabel}</span>
+                </span>
+              </div>
+              <button
+                onClick={clearLocationFilter}
+                className="flex-shrink-0 flex items-center gap-1 text-white/80 hover:text-white text-xs font-medium bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-all"
+              >
+                <X className="w-3 h-3" />
+                <span className="hidden sm:inline">Voir tout</span>
+              </button>
+            </div>
+          );
+        })()}
 
         <CalendarStrip
           selectedDate={selectedDate}
@@ -404,6 +468,7 @@ export default function Home() {
           onClose={() => setSearchOpen(false)}
           passengers={passengers}
           onStatusChange={handleStatusChange}
+          activeLocationFilter={filters.locations.length > 0 ? filters.locations[0] : null}
         />
 
         <FilterDrawer
@@ -425,6 +490,19 @@ export default function Home() {
           isOpen={!!selectedPassenger}
           onClose={() => setSelectedPassenger(null)}
           onStatusChange={handleStatusChange}
+        />
+
+        <LocationSelector
+          isOpen={locationSelectorOpen}
+          onClose={() => setLocationSelectorOpen(false)}
+          onSelect={(location) => {
+            if (location === null) {
+              // "See All" was selected
+              setFilters(prev => ({ ...prev, locations: [] }));
+            } else {
+              setFilters(prev => ({ ...prev, locations: [location] }));
+            }
+          }}
         />
       </div>
     </div>

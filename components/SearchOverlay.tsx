@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Search, Sparkles } from 'lucide-react';
+import { X, Search, Sparkles, MapPin, Globe } from 'lucide-react';
 import { Passenger, PassengerStatus } from '@/lib/supabaseClient';
 import { SearchResultCard } from './SearchResultCard';
 
@@ -8,9 +8,10 @@ interface SearchOverlayProps {
   onClose: () => void;
   passengers: Passenger[];
   onStatusChange: (id: string, newStatus: PassengerStatus) => void;
+  activeLocationFilter?: string | null;
 }
 
-export function SearchOverlay({ isOpen, onClose, passengers, onStatusChange }: SearchOverlayProps) {
+export function SearchOverlay({ isOpen, onClose, passengers, onStatusChange, activeLocationFilter }: SearchOverlayProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<Passenger[]>([]);
 
@@ -50,6 +51,20 @@ export function SearchOverlay({ isOpen, onClose, passengers, onStatusChange }: S
             >
               <X className="w-6 h-6 text-gray-300" />
             </button>
+          </div>
+          {/* Search Scope Indicator */}
+          <div className="px-5 pb-3">
+            {activeLocationFilter ? (
+              <div className="flex items-center gap-1.5 text-xs text-blue-400">
+                <MapPin className="w-3 h-3" />
+                <span>Recherche filtrée sur : <span className="font-semibold">{activeLocationFilter}</span></span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 text-xs text-emerald-400">
+                <Globe className="w-3 h-3" />
+                <span>Recherche globale sur tous les sites</span>
+              </div>
+            )}
           </div>
         </div>
 
