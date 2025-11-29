@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { parsePassengerCSV, ParsedPassenger } from '@/utils/csvParser';
+import type { ParsedPassenger } from '@/utils/csvParser';
 
 // Force dynamic rendering to prevent static optimization
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
-// Lazy Supabase client - only created at runtime, not build time
-function getSupabase(): SupabaseClient {
+// Dynamic import to prevent build-time execution
+async function getSupabase() {
+  const { createClient } = await import('@supabase/supabase-js');
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   return createClient(supabaseUrl, supabaseServiceKey);
@@ -31,7 +32,7 @@ async function serverUpsertPassengers(passengers: ParsedPassenger[]): Promise<{
   updated: number;
   errors: string[];
 }> {
-  const supabase = getSupabase();
+  const supabase = await getSupabase();
   const result = { created: 0, updated: 0, errors: [] as string[] };
 
   for (const passenger of passengers) {
@@ -159,7 +160,8 @@ export async function GET(request: NextRequest) {
     const rawRowCount = csvContent.split('\n').length;
     console.log(`[CRON SYNC] CSV fetched successfully. ${rawRowCount} raw rows.`);
 
-    // Step 2: Parse CSV using existing parser
+    // Step 2: Parse CSV using existing parser (dynamic import)
+    const { parsePassengerCSV } = await import('@/utils/csvParser');
     const parseResult = await parsePassengerCSV(csvContent);
     console.log(`[CRON SYNC] Parsed ${parseResult.passengers.length} valid passengers. Skipped: ${parseResult.skipped}. Rescued: ${parseResult.rescued}`);
 
