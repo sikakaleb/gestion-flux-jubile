@@ -1,25 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server';
-import type { ParsedPassenger } from '@/utils/csvParser';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 // Force dynamic rendering to prevent static optimization
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+export const fetchCache = 'force-no-store';
 
-// Dynamic import to prevent build-time execution
-async function getSupabase() {
-  const { createClient } = await import('@supabase/supabase-js');
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  return createClient(supabaseUrl, supabaseServiceKey);
+// Inline type to avoid importing csvParser at build time
+interface ParsedPassenger {
+  external_id: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  airline: string;
+  accommodation: string;
+  host_info?: string;
+  flight_date: string;
+  flight_time: string;
+  direction: 'arrival' | 'departure';
+  tags: string[];
+  status: 'pending' | 'picked_up' | 'housed';
 }
 
 // Hardcoded Google Sheet configuration
 const SHEET_ID = '1eBtzgwsUKQxw5L_-E6q2ncLok_4x3vBV6NLDSe1EMPA';
 const SHEET_GID = '2032719076'; // Details_Inscriptions tab
 
-/**
- * Convert sheet ID to CSV export URL
- */
 function getCSVExportUrl(): string {
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
 }
@@ -32,7 +40,11 @@ async function serverUpsertPassengers(passengers: ParsedPassenger[]): Promise<{
   updated: number;
   errors: string[];
 }> {
-  const supabase = await getSupabase();
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
   const result = { created: 0, updated: 0, errors: [] as string[] };
 
   for (const passenger of passengers) {
