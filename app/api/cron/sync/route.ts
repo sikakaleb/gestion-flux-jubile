@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { parsePassengerCSV, ParsedPassenger } from '@/utils/csvParser';
 
 // Force dynamic rendering to prevent static optimization
 export const dynamic = 'force-dynamic';
 
-// Server-side Supabase client with service role for cron jobs
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Lazy Supabase client - only created at runtime, not build time
+function getSupabase(): SupabaseClient {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  return createClient(supabaseUrl, supabaseServiceKey);
+}
 
 // Hardcoded Google Sheet configuration
 const SHEET_ID = '1eBtzgwsUKQxw5L_-E6q2ncLok_4x3vBV6NLDSe1EMPA';
@@ -29,6 +31,7 @@ async function serverUpsertPassengers(passengers: ParsedPassenger[]): Promise<{
   updated: number;
   errors: string[];
 }> {
+  const supabase = getSupabase();
   const result = { created: 0, updated: 0, errors: [] as string[] };
 
   for (const passenger of passengers) {
