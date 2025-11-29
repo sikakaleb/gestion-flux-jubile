@@ -9,19 +9,29 @@ on:
 
 jobs:
   sync:
-    name: Sync Google Sheet to Database
+    name: Sync ${{ matrix.env }}
     runs-on: ubuntu-latest
     
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - env: Preprod
+            url: https://preprod.jubile-cmr.com/api/cron/sync
+          - env: Production
+            url: https://jubile-cmr.com/api/cron/sync
+    
     steps:
-      - name: Trigger Sync API
+      - name: Trigger Sync API (${{ matrix.env }})
         run: |
-          echo "🔄 Starting automated sync..."
+          echo "🔄 Starting sync for ${{ matrix.env }}..."
+          echo "📡 Target: ${{ matrix.url }}"
           
           RESPONSE=$(curl -sL -w "\n%{http_code}" \
             -X GET \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
-            "https://gestion-flux-jubile.vercel.app/api/cron/sync")
+            "${{ matrix.url }}")
           
           HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
           BODY=$(echo "$RESPONSE" | sed '$d')
@@ -30,13 +40,13 @@ jobs:
           echo "Response Body: $BODY"
           
           if [ "$HTTP_CODE" -ne 200 ]; then
-            echo "❌ Sync failed with HTTP $HTTP_CODE"
+            echo "❌ Sync failed for ${{ matrix.env }} with HTTP $HTTP_CODE"
             exit 1
           fi
           
-          echo "✅ Sync completed successfully!"
+          echo "✅ ${{ matrix.env }} sync completed successfully!"
 
       - name: Log Result
         if: always()
         run: |
-          echo "Sync job finished at $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "${{ matrix.env }} sync finished at $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
