@@ -13,3 +13,9 @@
 /dataSources.local.xml
 # Editor-based HTTP Client requests
 /httpRequests/
+/copilot.data.migration.agent.xml
+/copilot.data.migration.ask.xml
+/copilot.data.migration.edit.xml
+/encodings.xml
+/indexLayout.xml
+/vcs.xml
