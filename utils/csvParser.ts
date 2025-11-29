@@ -1,6 +1,6 @@
 import Papa from 'papaparse';
 import { format, parse } from 'date-fns';
-import { PassengerStatus, PassengerDirection } from '@/lib/supabaseClient';
+import { PassengerStatus, PassengerDirection } from '@/lib/types';
 
 export interface CSVRow {
   'Registration ID': string;
