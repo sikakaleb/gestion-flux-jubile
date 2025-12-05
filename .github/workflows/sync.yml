@@ -2,36 +2,41 @@ name: Automated Data Sync
 
 on:
   schedule:
-    # Run every 3 hours
-    - cron: '0 */3 * * *'
+    # Production: every 15 minutes
+    - cron: '*/15 * * * *'
+    # Preprod: every 3 hours (at minute 5 to avoid collision)
+    - cron: '5 */3 * * *'
   workflow_dispatch:
     # Allow manual trigger from GitHub Actions UI
+    inputs:
+      environment:
+        description: 'Environment to sync'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - production
+          - preprod
 
 jobs:
-  sync:
-    name: Sync ${{ matrix.env }}
+  sync-production:
+    name: Sync Production
     runs-on: ubuntu-latest
-    
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - env: Preprod
-            url: https://preprod.jubile-cmr.com/api/cron/sync
-          - env: Production
-            url: https://jubile-cmr.com/api/cron/sync
+    # Run on 15-min schedule OR manual trigger for production/all
+    if: github.event.schedule == '*/15 * * * *' || github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'production' || github.event.inputs.environment == 'all')
     
     steps:
-      - name: Trigger Sync API (${{ matrix.env }})
+      - name: Trigger Sync API (Production)
         run: |
-          echo "🔄 Starting sync for ${{ matrix.env }}..."
-          echo "📡 Target: ${{ matrix.url }}"
+          echo "🔄 Starting sync for Production..."
+          echo "📡 Target: https://jubile-cmr.com/api/cron/sync"
           
           RESPONSE=$(curl -sL -w "\n%{http_code}" \
             -X GET \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
-            "${{ matrix.url }}")
+            "https://jubile-cmr.com/api/cron/sync")
           
           HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
           BODY=$(echo "$RESPONSE" | sed '$d')
@@ -40,13 +45,49 @@ jobs:
           echo "Response Body: $BODY"
           
           if [ "$HTTP_CODE" -ne 200 ]; then
-            echo "❌ Sync failed for ${{ matrix.env }} with HTTP $HTTP_CODE"
+            echo "❌ Sync failed for Production with HTTP $HTTP_CODE"
             exit 1
           fi
           
-          echo "✅ ${{ matrix.env }} sync completed successfully!"
+          echo "✅ Production sync completed successfully!"
 
       - name: Log Result
         if: always()
         run: |
-          echo "${{ matrix.env }} sync finished at $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "Production sync finished at $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
+  sync-preprod:
+    name: Sync Preprod
+    runs-on: ubuntu-latest
+    # Run on 3-hour schedule OR manual trigger for preprod/all
+    if: github.event.schedule == '5 */3 * * *' || github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'preprod' || github.event.inputs.environment == 'all')
+    
+    steps:
+      - name: Trigger Sync API (Preprod)
+        run: |
+          echo "🔄 Starting sync for Preprod..."
+          echo "📡 Target: https://preprod.jubile-cmr.com/api/cron/sync"
+          
+          RESPONSE=$(curl -sL -w "\n%{http_code}" \
+            -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            "https://preprod.jubile-cmr.com/api/cron/sync")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "Response Code: $HTTP_CODE"
+          echo "Response Body: $BODY"
+          
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "❌ Sync failed for Preprod with HTTP $HTTP_CODE"
+            exit 1
+          fi
+          
+          echo "✅ Preprod sync completed successfully!"
+
+      - name: Log Result
+        if: always()
+        run: |
+          echo "Preprod sync finished at $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
