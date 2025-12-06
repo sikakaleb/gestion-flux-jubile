@@ -1,8 +1,8 @@
 "use client";
 
-import { Plane, Bed, AlertCircle, MapPin, Bus } from 'lucide-react';
+import { Plane, Bed, AlertCircle, MapPin, Bus, UserX } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Passenger, PassengerStatus, STATUS_LABELS } from '@/lib/supabaseClient';
+import { Passenger, PassengerStatus, STATUS_LABELS, isPassengerRemoved } from '@/lib/types';
 import { clsx } from 'clsx';
 import { normalizeLocation } from '@/utils/csvParser';
 
@@ -39,6 +39,7 @@ export function PassengerCard({ passenger, onStatusChange, onClick }: PassengerC
   const isUrgent = passenger.is_urgent && passenger.status === 'pending';
   const styles = STATUS_STYLES[passenger.status];
   const isShuttle = passenger.tags?.includes('SHUTTLE');
+  const isRemoved = isPassengerRemoved(passenger, 2); // 2 heures car sync toutes les 15min en prod
 
   return (
     <div
@@ -46,16 +47,21 @@ export function PassengerCard({ passenger, onStatusChange, onClick }: PassengerC
       className={clsx(
         'corporate-card rounded-lg overflow-hidden cursor-pointer transition-all duration-200 active:scale-[0.98]',
         'border-l-4',
-        isUrgent ? 'border-l-red-600 dark:border-l-red-500' : styles.border,
+        isRemoved 
+          ? 'border-l-orange-500 dark:border-l-orange-400 opacity-70' 
+          : isUrgent 
+            ? 'border-l-red-600 dark:border-l-red-500' 
+            : styles.border,
         'md:flex md:items-center md:gap-4 md:p-4'
       )}
     >
       {/* MOBILE LAYOUT - Vertical Stack */}
       <div className="md:hidden">
-        {/* Row 1: Time + Flight Number + Urgent Icon */}
+        {/* Row 1: Time + Flight Number + Urgent/Removed Icons */}
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
           <div className="flex items-center gap-3">
-            {isUrgent && <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-500 flex-shrink-0" />}
+            {isRemoved && <UserX className="w-5 h-5 text-orange-500 dark:text-orange-400 flex-shrink-0" />}
+            {isUrgent && !isRemoved && <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-500 flex-shrink-0" />}
             <div className="text-3xl font-black font-mono text-slate-900 dark:text-white tracking-tight">
               {passenger.flight_time}
             </div>
@@ -66,11 +72,18 @@ export function PassengerCard({ passenger, onStatusChange, onClick }: PassengerC
           </div>
         </div>
 
-        {/* Row 2: FULL NAME - Never Truncated */}
+        {/* Row 2: FULL NAME + Removed Badge */}
         <div className="px-4 py-2">
-          <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white leading-tight whitespace-normal break-words">
-            {passenger.first_name} {passenger.last_name}
-          </h3>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white leading-tight whitespace-normal break-words">
+              {passenger.first_name} {passenger.last_name}
+            </h3>
+            {isRemoved && (
+              <Badge className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border border-orange-300 dark:border-orange-700 text-xs">
+                Plus dans la liste
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Row 3: Location (if available) */}
@@ -119,11 +132,17 @@ export function PassengerCard({ passenger, onStatusChange, onClick }: PassengerC
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
             <h3 className="font-semibold text-slate-900 dark:text-white text-lg">
               {passenger.first_name} {passenger.last_name}
             </h3>
-            {isUrgent && (
+            {isRemoved && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
+                <UserX className="w-3 h-3" />
+                Plus dans la liste
+              </span>
+            )}
+            {isUrgent && !isRemoved && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800">
                 <AlertCircle className="w-3 h-3" />
                 Urgent

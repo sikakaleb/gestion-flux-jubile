@@ -46,6 +46,9 @@ async function serverUpsertPassengers(passengers: ParsedPassenger[]): Promise<{
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   
   const result = { created: 0, updated: 0, errors: [] as string[] };
+  
+  // Timestamp for this sync run - all passengers get the same timestamp
+  const syncTimestamp = new Date().toISOString();
 
   for (const passenger of passengers) {
     try {
@@ -63,7 +66,7 @@ async function serverUpsertPassengers(passengers: ParsedPassenger[]): Promise<{
       }
 
       if (existing) {
-        // UPDATE: Preserve status and is_urgent
+        // UPDATE: Preserve status and is_urgent, update last_synced_at
         const { error: updateError } = await supabase
           .from('passengers')
           .update({
@@ -78,7 +81,8 @@ async function serverUpsertPassengers(passengers: ParsedPassenger[]): Promise<{
             location: passenger.location,
             host_info: passenger.host_info,
             tags: passenger.tags,
-            updated_at: new Date().toISOString(),
+            updated_at: syncTimestamp,
+            last_synced_at: syncTimestamp, // Track when we last saw this passenger
           })
           .eq('id', existing.id);
 
@@ -88,7 +92,7 @@ async function serverUpsertPassengers(passengers: ParsedPassenger[]): Promise<{
           result.updated++;
         }
       } else {
-        // INSERT: New record
+        // INSERT: New record with last_synced_at
         const { error: insertError } = await supabase
           .from('passengers')
           .insert({
@@ -107,8 +111,9 @@ async function serverUpsertPassengers(passengers: ParsedPassenger[]): Promise<{
             host_info: passenger.host_info,
             tags: passenger.tags,
             is_urgent: false,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            created_at: syncTimestamp,
+            updated_at: syncTimestamp,
+            last_synced_at: syncTimestamp, // Track when we first saw this passenger
           });
 
         if (insertError) {

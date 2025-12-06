@@ -20,6 +20,23 @@ export interface Passenger {
   phone?: string;
   location?: string;
   email?: string;
+  last_synced_at?: string; // Track when passenger was last seen in source data
+}
+
+/**
+ * Check if a passenger is no longer in the source data (not synced recently)
+ * @param passenger - The passenger to check
+ * @param hoursThreshold - Hours since last sync to consider as "removed" (default: 24)
+ * @returns true if passenger hasn't been synced within the threshold
+ */
+export function isPassengerRemoved(passenger: Passenger, hoursThreshold: number = 24): boolean {
+  if (!passenger.last_synced_at) return false; // No data = assume OK (legacy records)
+  
+  const lastSync = new Date(passenger.last_synced_at);
+  const now = new Date();
+  const hoursSinceSync = (now.getTime() - lastSync.getTime()) / (1000 * 60 * 60);
+  
+  return hoursSinceSync > hoursThreshold;
 }
 
 export const STATUS_LABELS: Record<PassengerStatus, string> = {
