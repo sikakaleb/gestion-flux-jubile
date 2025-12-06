@@ -2,8 +2,8 @@ name: Automated Data Sync
 
 on:
   schedule:
-    # Production: every 15 minutes
-    - cron: '*/15 * * * *'
+    # Production: every 1 hour
+    - cron: '0 * * * *'
     # Preprod: every 3 hours (at minute 5 to avoid collision)
     - cron: '5 */3 * * *'
   workflow_dispatch:
@@ -23,8 +23,8 @@ jobs:
   sync-production:
     name: Sync Production
     runs-on: ubuntu-latest
-    # Run on 15-min schedule OR manual trigger for production/all
-    if: github.event.schedule == '*/15 * * * *' || github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'production' || github.event.inputs.environment == 'all')
+    # Run on 1-hour schedule OR manual trigger for production/all
+    if: github.event.schedule == '0 * * * *' || github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'production' || github.event.inputs.environment == 'all')
     
     steps:
       - name: Trigger Sync API (Production)

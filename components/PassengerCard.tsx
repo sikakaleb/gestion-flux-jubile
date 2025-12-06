@@ -39,7 +39,7 @@ export function PassengerCard({ passenger, onStatusChange, onClick }: PassengerC
   const isUrgent = passenger.is_urgent && passenger.status === 'pending';
   const styles = STATUS_STYLES[passenger.status];
   const isShuttle = passenger.tags?.includes('SHUTTLE');
-  const isRemoved = isPassengerRemoved(passenger, 2); // 2 heures car sync toutes les 15min en prod
+  const isRemoved = isPassengerRemoved(passenger, 3); // 3 heures car sync toutes les 1h en prod
 
   return (
     <div
