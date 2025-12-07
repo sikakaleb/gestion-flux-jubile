@@ -63,6 +63,14 @@ export function isPassengerUrgent(passenger: Passenger, minutesThreshold: number
     const flightDateTime = new Date(year, month - 1, day, hours, minutes);
     const now = new Date();
     
+    // Only show urgent for TODAY's flights
+    const today = new Date();
+    const isToday = year === today.getFullYear() && 
+                    month === today.getMonth() + 1 && 
+                    day === today.getDate();
+    
+    if (!isToday) return false; // Past/future days are not urgent
+    
     const minutesSinceFlight = (now.getTime() - flightDateTime.getTime()) / (1000 * 60);
     
     // Urgent if flight was more than minutesThreshold ago and still pending
