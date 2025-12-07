@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { Search, Settings, Filter, AlertCircle, ChevronDown, ChevronUp, Globe, X, MapPin } from 'lucide-react';
-import { supabase, Passenger, PassengerStatus, PassengerDirection } from '@/lib/supabaseClient';
+import { supabase, Passenger, PassengerStatus, PassengerDirection, isPassengerUrgent } from '@/lib/supabaseClient';
 import { PassengerCard } from '@/components/PassengerCard';
 import { PassengerDetailsSheet } from '@/components/PassengerDetailsSheet';
 import { CalendarStrip } from '@/components/CalendarStrip';
@@ -175,11 +175,11 @@ export default function Home() {
   }, [passengers, selectedDate, direction, filters, quickFilter]);
 
   const urgentPassengers = useMemo(() => {
-    return filteredPassengers.filter((p) => p.is_urgent && p.status === 'pending');
+    return filteredPassengers.filter((p) => isPassengerUrgent(p, 2));
   }, [filteredPassengers]);
 
   const regularPassengers = useMemo(() => {
-    return filteredPassengers.filter((p) => !p.is_urgent || p.status !== 'pending');
+    return filteredPassengers.filter((p) => !isPassengerUrgent(p, 2));
   }, [filteredPassengers]);
 
   const timeBlocks = useMemo(() => {

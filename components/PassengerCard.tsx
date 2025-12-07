@@ -2,7 +2,7 @@
 
 import { Plane, Bed, AlertCircle, MapPin, Bus, UserX } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Passenger, PassengerStatus, STATUS_LABELS, isPassengerRemoved } from '@/lib/types';
+import { Passenger, PassengerStatus, STATUS_LABELS, isPassengerRemoved, isPassengerUrgent } from '@/lib/types';
 import { clsx } from 'clsx';
 import { normalizeLocation } from '@/utils/csvParser';
 
@@ -36,7 +36,7 @@ export function PassengerCard({ passenger, onStatusChange, onClick }: PassengerC
     onStatusChange(passenger.id, nextStatus);
   };
 
-  const isUrgent = passenger.is_urgent && passenger.status === 'pending';
+  const isUrgent = isPassengerUrgent(passenger, 2); // Urgent si arrivée > 2h et toujours pending
   const styles = STATUS_STYLES[passenger.status];
   const isShuttle = passenger.tags?.includes('SHUTTLE');
   const isRemoved = isPassengerRemoved(passenger, 3); // 3 heures car sync toutes les 1h en prod

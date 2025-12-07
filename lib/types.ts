@@ -39,6 +39,39 @@ export function isPassengerRemoved(passenger: Passenger, hoursThreshold: number 
   return hoursSinceSync > hoursThreshold;
 }
 
+/**
+ * Check if a passenger is urgent (pending and flight time has passed)
+ * @param passenger - The passenger to check
+ * @param hoursThreshold - Hours after flight time to consider as urgent (default: 2)
+ * @returns true if passenger is pending and their flight was more than hoursThreshold ago
+ */
+export function isPassengerUrgent(passenger: Passenger, hoursThreshold: number = 2): boolean {
+  // Only pending passengers can be urgent
+  if (passenger.status !== 'pending') return false;
+  
+  // Manual override: if is_urgent is explicitly set, use it
+  if (passenger.is_urgent === true) return true;
+  
+  // Only arrivals can be "urgent" (departures are different)
+  if (passenger.direction !== 'arrival') return false;
+  
+  try {
+    // Parse flight date and time
+    const [year, month, day] = passenger.flight_date.split('-').map(Number);
+    const [hours, minutes] = passenger.flight_time.split(':').map(Number);
+    
+    const flightDateTime = new Date(year, month - 1, day, hours, minutes);
+    const now = new Date();
+    
+    const hoursSinceFlight = (now.getTime() - flightDateTime.getTime()) / (1000 * 60 * 60);
+    
+    // Urgent if flight was more than hoursThreshold ago and still pending
+    return hoursSinceFlight > hoursThreshold;
+  } catch {
+    return false; // If parsing fails, not urgent
+  }
+}
+
 export const STATUS_LABELS: Record<PassengerStatus, string> = {
   pending: 'En attente',
   picked_up: 'Récupéré',
