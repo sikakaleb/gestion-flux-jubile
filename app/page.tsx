@@ -175,11 +175,11 @@ export default function Home() {
   }, [passengers, selectedDate, direction, filters, quickFilter]);
 
   const urgentPassengers = useMemo(() => {
-    return filteredPassengers.filter((p) => isPassengerUrgent(p, 2));
+    return filteredPassengers.filter((p) => isPassengerUrgent(p, 10));
   }, [filteredPassengers]);
 
   const regularPassengers = useMemo(() => {
-    return filteredPassengers.filter((p) => !isPassengerUrgent(p, 2));
+    return filteredPassengers.filter((p) => !isPassengerUrgent(p, 10));
   }, [filteredPassengers]);
 
   const timeBlocks = useMemo(() => {

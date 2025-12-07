@@ -36,7 +36,7 @@ export function PassengerCard({ passenger, onStatusChange, onClick }: PassengerC
     onStatusChange(passenger.id, nextStatus);
   };
 
-  const isUrgent = isPassengerUrgent(passenger, 2); // Urgent si arrivée > 2h et toujours pending
+  const isUrgent = isPassengerUrgent(passenger, 10); // Urgent si arrivée > 10min et toujours pending
   const styles = STATUS_STYLES[passenger.status];
   const isShuttle = passenger.tags?.includes('SHUTTLE');
   const isRemoved = isPassengerRemoved(passenger, 3); // 3 heures car sync toutes les 1h en prod
