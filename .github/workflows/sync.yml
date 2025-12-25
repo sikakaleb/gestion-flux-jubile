@@ -1,11 +1,12 @@
 name: Automated Data Sync
 
 on:
-  schedule:
-    # Production: every 1 hour
-    - cron: '0 * * * *'
-    # Preprod: every 3 hours (at minute 5 to avoid collision)
-    - cron: '5 */3 * * *'
+  # Automatic schedules disabled - manual trigger only
+  # schedule:
+  #   # Production: every 1 hour
+  #   - cron: '0 * * * *'
+  #   # Preprod: every 3 hours (at minute 5 to avoid collision)
+  #   - cron: '5 */3 * * *'
   workflow_dispatch:
     # Allow manual trigger from GitHub Actions UI
     inputs:
